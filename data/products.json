@@ -59,7 +59,7 @@
     "unit": "0,5 л",
     "category": "Заготовки",
     "accent": "#a63d55",
-    "available": true
+    "available": false
   },
   {
     "id": "potato",

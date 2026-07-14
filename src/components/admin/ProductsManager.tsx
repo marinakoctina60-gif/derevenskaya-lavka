@@ -109,7 +109,7 @@ export function ProductsManager({ initialProducts }: { initialProducts: Product[
           body: JSON.stringify(payload),
         },
       );
-      const data = (await res.json()) as {
+      const data = (await res.json().catch(() => ({}))) as {
         products?: Product[];
         error?: string;
       };
@@ -124,7 +124,9 @@ export function ProductsManager({ initialProducts }: { initialProducts: Product[
       setMessage(isNew ? "Товар добавлен" : "Товар сохранён");
       router.refresh();
     } catch {
-      setError("Ошибка сети");
+      setError(
+        "Не удалось сохранить. На Cloudflare правки через админку пока не сохраняются — напишите, что изменить, или правьте на компьютере.",
+      );
     } finally {
       setBusy(false);
     }

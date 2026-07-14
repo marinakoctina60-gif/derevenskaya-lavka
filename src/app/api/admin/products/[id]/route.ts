@@ -41,9 +41,15 @@ export async function PUT(request: Request, { params }: Params) {
     ...(body.image?.trim() ? { image: body.image.trim() } : {}),
   };
 
-  const next = await saveProducts(products);
-  revalidatePath("/", "layout");
-  return NextResponse.json({ product: products[index], products: next });
+  try {
+    const next = await saveProducts(products);
+    revalidatePath("/", "layout");
+    return NextResponse.json({ product: products[index], products: next });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Не удалось сохранить товар";
+    return NextResponse.json({ error: message }, { status: 503 });
+  }
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
@@ -58,7 +64,13 @@ export async function DELETE(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "Товар не найден" }, { status: 404 });
   }
 
-  await saveProducts(next);
-  revalidatePath("/", "layout");
-  return NextResponse.json({ products: next });
+  try {
+    await saveProducts(next);
+    revalidatePath("/", "layout");
+    return NextResponse.json({ products: next });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Не удалось удалить товар";
+    return NextResponse.json({ error: message }, { status: 503 });
+  }
 }

@@ -49,9 +49,15 @@ export async function POST(request: Request) {
     ...(body.image?.trim() ? { image: body.image.trim() } : {}),
   };
 
-  const next = await saveProducts([...products, product]);
-  revalidatePath("/", "layout");
-  return NextResponse.json({ product, products: next });
+  try {
+    const next = await saveProducts([...products, product]);
+    revalidatePath("/", "layout");
+    return NextResponse.json({ product, products: next });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Не удалось сохранить товар";
+    return NextResponse.json({ error: message }, { status: 503 });
+  }
 }
 
 export async function PUT(request: Request) {
@@ -70,7 +76,13 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Ожидается список товаров" }, { status: 400 });
   }
 
-  const next = await saveProducts(body.products);
-  revalidatePath("/", "layout");
-  return NextResponse.json({ products: next });
+  try {
+    const next = await saveProducts(body.products);
+    revalidatePath("/", "layout");
+    return NextResponse.json({ products: next });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Не удалось сохранить товары";
+    return NextResponse.json({ error: message }, { status: 503 });
+  }
 }

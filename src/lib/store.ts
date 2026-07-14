@@ -79,12 +79,18 @@ export async function getAvailableProducts(): Promise<Product[]> {
 }
 
 export async function saveProducts(products: Product[]) {
-  await ensureDataDir();
-  const normalized = products.map((item, index) =>
-    normalizeProduct(item, `product-${index + 1}`),
-  );
-  await writeFile(PRODUCTS_FILE, JSON.stringify(normalized, null, 2), "utf8");
-  return normalized;
+  try {
+    await ensureDataDir();
+    const normalized = products.map((item, index) =>
+      normalizeProduct(item, `product-${index + 1}`),
+    );
+    await writeFile(PRODUCTS_FILE, JSON.stringify(normalized, null, 2), "utf8");
+    return normalized;
+  } catch {
+    throw new Error(
+      "На Cloudflare сохранение товаров пока недоступно. Изменения делайте на компьютере или попросите обновить данные в GitHub.",
+    );
+  }
 }
 
 export async function getSettings(): Promise<SiteSettings> {
@@ -98,7 +104,6 @@ export async function getSettings(): Promise<SiteSettings> {
 }
 
 export async function saveSettings(settings: SiteSettings) {
-  await ensureDataDir();
   const next: SiteSettings = {
     brandName: settings.brandName.trim() || DEFAULT_SETTINGS.brandName,
     tagline: settings.tagline.trim() || DEFAULT_SETTINGS.tagline,
@@ -115,8 +120,15 @@ export async function saveSettings(settings: SiteSettings) {
     footerTagline:
       settings.footerTagline.trim() || DEFAULT_SETTINGS.footerTagline,
   };
-  await writeFile(SETTINGS_FILE, JSON.stringify(next, null, 2), "utf8");
-  return next;
+  try {
+    await ensureDataDir();
+    await writeFile(SETTINGS_FILE, JSON.stringify(next, null, 2), "utf8");
+    return next;
+  } catch {
+    throw new Error(
+      "На Cloudflare сохранение настроек пока недоступно. Изменения делайте на компьютере.",
+    );
+  }
 }
 
 export async function getOrders(): Promise<SavedOrder[]> {

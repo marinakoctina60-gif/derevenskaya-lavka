@@ -2,6 +2,7 @@ import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
+import { getCloudR2 } from "@/lib/cloud-r2";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -31,10 +32,7 @@ export async function POST(request: Request) {
   }
 
   if (file.size > MAX_BYTES) {
-    return NextResponse.json(
-      { error: "Файл больше 5 МБ" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Файл больше 5 МБ" }, { status: 400 });
   }
 
   const ext =
@@ -46,14 +44,31 @@ export async function POST(request: Request) {
           ? "gif"
           : "jpg";
 
-  const dir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(dir, { recursive: true });
-
   const filename = `${Date.now().toString(36)}-${Math.random()
     .toString(36)
     .slice(2, 8)}.${ext}`;
   const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(dir, filename), buffer);
 
-  return NextResponse.json({ url: `/uploads/${filename}` });
+  const r2 = await getCloudR2();
+  if (r2) {
+    await r2.put(`uploads/${filename}`, buffer, {
+      httpMetadata: { contentType: file.type },
+    });
+    return NextResponse.json({ url: `/api/media/${filename}` });
+  }
+
+  try {
+    const dir = path.join(process.cwd(), "public", "uploads");
+    await mkdir(dir, { recursive: true });
+    await writeFile(path.join(dir, filename), buffer);
+    return NextResponse.json({ url: `/uploads/${filename}` });
+  } catch {
+    return NextResponse.json(
+      {
+        error:
+          "Загрузка фото недоступна: подключите R2 (привязка LAVKA_UPLOADS).",
+      },
+      { status: 503 },
+    );
+  }
 }

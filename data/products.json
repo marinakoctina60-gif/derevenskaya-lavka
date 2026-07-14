@@ -1,0 +1,104 @@
+[
+  {
+    "id": "milk",
+    "name": "Молоко домашнее",
+    "description": "Свежее цельное молоко от своих коров, утренний надой.",
+    "price": 120,
+    "unit": "1 л",
+    "category": "Молочка",
+    "accent": "#7a9e7e",
+    "available": true,
+    "image": "/uploads/mrkm9ha6-gpuzen.jpg"
+  },
+  {
+    "id": "eggs",
+    "name": "Яйца деревенские",
+    "description": "От кур свободного выгула. Насыщенный желток.",
+    "price": 180,
+    "unit": "10 шт",
+    "category": "Яйца",
+    "accent": "#d4a84b",
+    "available": true,
+    "image": "/uploads/mrkmb71b-t0kf7r.jpg"
+  },
+  {
+    "id": "cottage-cheese",
+    "name": "Творог зернистый",
+    "description": "Домашний творог средней жирности, без добавок.",
+    "price": 280,
+    "unit": "500 г",
+    "category": "Молочка",
+    "accent": "#c4b59a",
+    "available": true
+  },
+  {
+    "id": "sour-cream",
+    "name": "Сметана густая",
+    "description": "Натуральная сметана 20%. Идеальна к борщу и вареникам.",
+    "price": 160,
+    "unit": "400 г",
+    "category": "Молочка",
+    "accent": "#e8dcc8",
+    "available": true
+  },
+  {
+    "id": "honey",
+    "name": "Мёд липовый",
+    "description": "Собственный пасечный сбор. Аромат и вкус лета.",
+    "price": 650,
+    "unit": "1 кг",
+    "category": "Мёд",
+    "accent": "#c9922a",
+    "available": true
+  },
+  {
+    "id": "jam",
+    "name": "Варенье малиновое",
+    "description": "Из ягод с нашего участка. Минимум сахара.",
+    "price": 320,
+    "unit": "0,5 л",
+    "category": "Заготовки",
+    "accent": "#a63d55",
+    "available": true
+  },
+  {
+    "id": "potato",
+    "name": "Картофель молодой",
+    "description": "Свежий урожай. Чистый, ровный, без химии.",
+    "price": 90,
+    "unit": "2 кг",
+    "category": "Овощи",
+    "accent": "#b8a06a",
+    "available": true
+  },
+  {
+    "id": "cucumbers",
+    "name": "Огурцы свежие",
+    "description": "Хрустящие грунтовые огурцы с грядки.",
+    "price": 140,
+    "unit": "1 кг",
+    "category": "Овощи",
+    "accent": "#5f8f5a",
+    "available": true
+  },
+  {
+    "id": "cheese",
+    "name": "Сыр домашний",
+    "description": "Мягкий сыр из своего молока. Солёный и нежный.",
+    "price": 420,
+    "unit": "300 г",
+    "category": "Молочка",
+    "accent": "#e0c878",
+    "available": true
+  },
+  {
+    "id": "chicken",
+    "name": "Курица домашняя",
+    "description": "Охлаждённая тушка. Выращена без ускорителей роста.",
+    "price": 480,
+    "unit": "1 шт ~1,5 кг",
+    "category": "Мясо",
+    "accent": "#8b6b4a",
+    "available": true
+  }
+]

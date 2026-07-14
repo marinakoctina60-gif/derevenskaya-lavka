@@ -1,5 +1,7 @@
 import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
+import productsSeed from "../../data/products.json";
+import settingsSeed from "../../data/settings.json";
 import type { Product, SavedOrder, SiteSettings } from "@/lib/types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -13,7 +15,7 @@ const DEFAULT_SETTINGS: SiteSettings = {
   heroTitle: "Свежие продукты с нашего двора",
   heroLead:
     "Соберите корзину на сайте и оставьте заявку. Оплатите при получении — наличными или по терминалу.",
-  heroImage: "",
+  heroImage: "/uploads/hero-farm-table.jpg",
   phone: "+79000000000",
   phoneDisplay: "+7 (900) 000-00-00",
   hours: "Ежедневно с 9:00 до 20:00",
@@ -25,6 +27,16 @@ const DEFAULT_SETTINGS: SiteSettings = {
   catalogIntro: "Домашняя деревенская продукция — с грядки и с двора.",
   footerTagline: "Домашняя продукция с нашего двора",
 };
+
+function seedProducts(): Product[] {
+  return (productsSeed as Partial<Product>[]).map((item, index) =>
+    normalizeProduct(item, `product-${index + 1}`),
+  );
+}
+
+function seedSettings(): SiteSettings {
+  return { ...DEFAULT_SETTINGS, ...(settingsSeed as Partial<SiteSettings>) };
+}
 
 async function ensureDataDir() {
   await mkdir(DATA_DIR, { recursive: true });
@@ -50,13 +62,15 @@ export async function getProducts(): Promise<Product[]> {
   try {
     const raw = await readFile(PRODUCTS_FILE, "utf8");
     const parsed = JSON.parse(raw) as Partial<Product>[];
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map((item, index) =>
-      normalizeProduct(item, `product-${index + 1}`),
-    );
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed.map((item, index) =>
+        normalizeProduct(item, `product-${index + 1}`),
+      );
+    }
   } catch {
-    return [];
+    // Cloudflare Workers have no filesystem — use bundled seed data.
   }
+  return seedProducts();
 }
 
 export async function getAvailableProducts(): Promise<Product[]> {
@@ -79,7 +93,7 @@ export async function getSettings(): Promise<SiteSettings> {
     const parsed = JSON.parse(raw) as Partial<SiteSettings>;
     return { ...DEFAULT_SETTINGS, ...parsed };
   } catch {
-    return DEFAULT_SETTINGS;
+    return seedSettings();
   }
 }
 

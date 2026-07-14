@@ -1,22 +1,22 @@
 # Как включить сохранение через админку на Cloudflare
 
-Сейчас сайт в облаке **не может писать файлы на диск**. Поэтому админка и ломалась.
-Нужно один раз подключить хранилище **KV**.
+## Почему не было видно KV
 
-## Шаги в Cloudflare (один раз)
+Раздел **KV** находится не в списке сайтов, а в меню слева:
+**Storage & databases** → **KV**.
 
-1. Откройте [Workers & Pages → KV](https://dash.cloudflare.com/?to=/:account/workers/kv/namespaces)
-2. Нажмите **Create a namespace**
-3. Имя: `lavka-data` → Create
-4. Откройте ваш Worker **derevenskaya-lavka** → вкладка **Bindings**
-5. **Add** → **KV Namespace**
-6. Variable name: `LAVKA_DATA` (именно так)
-7. Namespace: выберите `lavka-data`
-8. Сохраните и сделайте **Retry build** / Redeploy
+Или откройте прямую ссылку (подставьте свой аккаунт, если попросит войти):
 
-После этого в админке можно менять товары, цены, тексты и принимать заявки.
+https://dash.cloudflare.com/7661c978e41a0b007578bb3ab0e3272c/workers/kv/namespaces
 
-## Фото товаров
+## Шаги (один раз)
 
-Загрузка фото на Cloudflare пока может не сохраняться (нужен отдельный R2-бакет).
-Пока можно присылать фото мне — добавлю в сайт вручную.
+1. Откройте ссылку выше
+2. **Create namespace** → имя `lavka-data` → Create
+3. Вернитесь в Worker **derevenskaya-lavka**
+4. Вкладка **Bindings** → **Add** → **KV Namespace**
+5. Variable name: `LAVKA_DATA` (точно так)
+6. Namespace: `lavka-data`
+7. Save → **Deployments** → **Retry build**
+
+После этого админка сможет сохранять товары и настройки.

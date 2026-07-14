@@ -114,23 +114,24 @@ export function ProductsManager({ initialProducts }: { initialProducts: Product[
         error?: string;
       };
       if (!res.ok) {
-        setError(data.error ?? "Не удалось сохранить");
-        setBusy(false);
-        return;
-      }
-      setProducts(data.products ?? []);
-      setEditingId(null);
-      setDraft(emptyDraft);
-      setMessage(isNew ? "Товар добавлен" : "Товар сохранён");
-      router.refresh();
-    } catch {
-      setError(
-        "Не удалось сохранить. На Cloudflare правки через админку пока не сохраняются — напишите, что изменить, или правьте на компьютере.",
+        setError(
+        data.error ??
+          "Не удалось сохранить. Если вы на Cloudflare — подключите хранилище KV (LAVKA_DATA).",
       );
-    } finally {
       setBusy(false);
+      return;
     }
+    setProducts(data.products ?? []);
+    setEditingId(null);
+    setDraft(emptyDraft);
+    setMessage(isNew ? "Товар добавлен" : "Товар сохранён");
+    router.refresh();
+  } catch {
+    setError("Не удалось сохранить. Проверьте интернет и попробуйте ещё раз.");
+  } finally {
+    setBusy(false);
   }
+}
 
   async function removeProduct(id: string) {
     if (!confirm("Удалить этот товар?")) return;

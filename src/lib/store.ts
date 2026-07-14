@@ -2,12 +2,17 @@ import { mkdir, readFile, writeFile } from "fs/promises";
 import path from "path";
 import productsSeed from "../../data/products.json";
 import settingsSeed from "../../data/settings.json";
+import { getCloudKv } from "@/lib/cloud-kv";
 import type { Product, SavedOrder, SiteSettings } from "@/lib/types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const PRODUCTS_FILE = path.join(DATA_DIR, "products.json");
 const SETTINGS_FILE = path.join(DATA_DIR, "settings.json");
 const ORDERS_FILE = path.join(DATA_DIR, "orders.json");
+
+const KV_PRODUCTS = "products";
+const KV_SETTINGS = "settings";
+const KV_ORDERS = "orders";
 
 const DEFAULT_SETTINGS: SiteSettings = {
   brandName: "Деревенская лавка",
@@ -58,17 +63,37 @@ function normalizeProduct(raw: Partial<Product>, fallbackId: string): Product {
   };
 }
 
-export async function getProducts(): Promise<Product[]> {
+function normalizeProducts(raw: Partial<Product>[]): Product[] {
+  return raw.map((item, index) => normalizeProduct(item, `product-${index + 1}`));
+}
+
+async function readJsonFile<T>(filePath: string): Promise<T | null> {
   try {
-    const raw = await readFile(PRODUCTS_FILE, "utf8");
-    const parsed = JSON.parse(raw) as Partial<Product>[];
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed.map((item, index) =>
-        normalizeProduct(item, `product-${index + 1}`),
-      );
-    }
+    const raw = await readFile(filePath, "utf8");
+    return JSON.parse(raw) as T;
   } catch {
-    // Cloudflare Workers have no filesystem — use bundled seed data.
+    return null;
+  }
+}
+
+export async function getProducts(): Promise<Product[]> {
+  const kv = await getCloudKv();
+  if (kv) {
+    const raw = await kv.get(KV_PRODUCTS);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<Product>[];
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return normalizeProducts(parsed);
+      }
+    }
+    const seeded = seedProducts();
+    await kv.put(KV_PRODUCTS, JSON.stringify(seeded));
+    return seeded;
+  }
+
+  const fromFile = await readJsonFile<Partial<Product>[]>(PRODUCTS_FILE);
+  if (Array.isArray(fromFile) && fromFile.length > 0) {
+    return normalizeProducts(fromFile);
   }
   return seedProducts();
 }
@@ -79,28 +104,42 @@ export async function getAvailableProducts(): Promise<Product[]> {
 }
 
 export async function saveProducts(products: Product[]) {
+  const normalized = normalizeProducts(products);
+  const kv = await getCloudKv();
+  if (kv) {
+    await kv.put(KV_PRODUCTS, JSON.stringify(normalized));
+    return normalized;
+  }
+
   try {
     await ensureDataDir();
-    const normalized = products.map((item, index) =>
-      normalizeProduct(item, `product-${index + 1}`),
-    );
     await writeFile(PRODUCTS_FILE, JSON.stringify(normalized, null, 2), "utf8");
     return normalized;
   } catch {
     throw new Error(
-      "На Cloudflare сохранение товаров пока недоступно. Изменения делайте на компьютере или попросите обновить данные в GitHub.",
+      "Сохранение недоступно: подключите Cloudflare KV (привязка LAVKA_DATA) или правьте сайт на компьютере.",
     );
   }
 }
 
 export async function getSettings(): Promise<SiteSettings> {
-  try {
-    const raw = await readFile(SETTINGS_FILE, "utf8");
-    const parsed = JSON.parse(raw) as Partial<SiteSettings>;
-    return { ...DEFAULT_SETTINGS, ...parsed };
-  } catch {
-    return seedSettings();
+  const kv = await getCloudKv();
+  if (kv) {
+    const raw = await kv.get(KV_SETTINGS);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<SiteSettings>;
+      return { ...DEFAULT_SETTINGS, ...parsed };
+    }
+    const seeded = seedSettings();
+    await kv.put(KV_SETTINGS, JSON.stringify(seeded));
+    return seeded;
   }
+
+  const fromFile = await readJsonFile<Partial<SiteSettings>>(SETTINGS_FILE);
+  if (fromFile) {
+    return { ...DEFAULT_SETTINGS, ...fromFile };
+  }
+  return seedSettings();
 }
 
 export async function saveSettings(settings: SiteSettings) {
@@ -120,30 +159,52 @@ export async function saveSettings(settings: SiteSettings) {
     footerTagline:
       settings.footerTagline.trim() || DEFAULT_SETTINGS.footerTagline,
   };
+
+  const kv = await getCloudKv();
+  if (kv) {
+    await kv.put(KV_SETTINGS, JSON.stringify(next));
+    return next;
+  }
+
   try {
     await ensureDataDir();
     await writeFile(SETTINGS_FILE, JSON.stringify(next, null, 2), "utf8");
     return next;
   } catch {
     throw new Error(
-      "На Cloudflare сохранение настроек пока недоступно. Изменения делайте на компьютере.",
+      "Сохранение недоступно: подключите Cloudflare KV (привязка LAVKA_DATA).",
     );
   }
 }
 
 export async function getOrders(): Promise<SavedOrder[]> {
-  try {
-    const raw = await readFile(ORDERS_FILE, "utf8");
+  const kv = await getCloudKv();
+  if (kv) {
+    const raw = await kv.get(KV_ORDERS);
+    if (!raw) return [];
     const parsed = JSON.parse(raw) as SavedOrder[];
     return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
   }
+
+  const fromFile = await readJsonFile<SavedOrder[]>(ORDERS_FILE);
+  return Array.isArray(fromFile) ? fromFile : [];
 }
 
 export async function saveOrders(orders: SavedOrder[]) {
-  await ensureDataDir();
-  await writeFile(ORDERS_FILE, JSON.stringify(orders, null, 2), "utf8");
+  const kv = await getCloudKv();
+  if (kv) {
+    await kv.put(KV_ORDERS, JSON.stringify(orders));
+    return;
+  }
+
+  try {
+    await ensureDataDir();
+    await writeFile(ORDERS_FILE, JSON.stringify(orders, null, 2), "utf8");
+  } catch {
+    throw new Error(
+      "Сохранение заявок недоступно: подключите Cloudflare KV (привязка LAVKA_DATA).",
+    );
+  }
 }
 
 export function slugifyId(name: string): string {
